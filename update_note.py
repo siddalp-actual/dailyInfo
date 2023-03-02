@@ -29,11 +29,13 @@ import gdocHelper as gh
 
 access = gf.gdriveAccess()
 # keepAccess.load(access.credentials)
-# outGdoc = gf.gdriveFile.gdfFromId(TESTDOCID, access, docType='document')
+# outGdoc = gf.gdriveFile.gdfFromId(gkeepSecrets.mySecrets.TESTDOCID, access, docType='document')
 outGdoc = gf.gdriveFile.gdfFromId(
     gkeepSecrets.mySecrets.TODAYDOCID, access, docType="document"
 )
 gh.GdocHelper.assertIsDoc(outGdoc)  # upgrade to a gdocHelper object
+                                    # also has the side-effect of parsing the
+                                    # document to create an 'outline' index
 
 
 class ExchangeRate(object):
@@ -521,18 +523,43 @@ p += text
 
 def cleanOldEntry(doc):
     (dateStr, index) = doc.outline.findFirstDate()
-    yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
-    date = datetime.datetime.strptime(dateStr, "%a %d %b %Y")
-    if date < yesterday:
-        startPos = doc.outline.headings[index].startPos
-        endPos = doc.outline.headings[index + 1].startPos
-        doc.deleteText(startPos, endPos)
+    # print(f"cleanOld: found {dateStr} at index {index} of {len(doc.outline.headings)}")
+    older = datetime.datetime.now() - datetime.timedelta(hours=72)
+    while index < len(doc.outline.headings):
+        # going to loop over the dated titles
+        date = datetime.datetime.strptime(dateStr, "%a %d %b %Y")
+        if date < older:  # want to delete it
+            startPos = doc.outline.headings[index].startPos
+            if index >= len(doc.outline.headings) - 1:
+                endPos = doc.docExtent
+            else:
+                endPos = doc.outline.headings[index + 1].startPos
+            # 'Invalid requests[0].deleteContentRange: The range cannot include
+            # the newline character at the end of the segment.
+            # So, we go to endPos - 1 
+            # print(f"cleanOld: delete [{startPos}, {endPos - 1}]")
+            doc.deleteText(startPos, endPos - 1)
+            index -= 1  # backup an index, because we just deleted it
+        else:
+            # skip over the recent one we found and try again
+            # print(f"cleanOld: skipping...")
+            pass
+        try:
+            (dateStr, index) = doc.outline.findFirstDate(after=index)
+            # print(f"cleanOld: found {dateStr} at index {index} of {len(doc.outline.headings)}")
+        except Exception as e:
+            return  # couldn't parse out a date so leave deletion
 
 
 if printOnly:
     print(p)
     #                      %a = Wed, %d = 27, %b = May, %Y = 2020
-    outGdoc.appendTextWithHeader(today.strftime("Update for %a %d %b %Y"), p)
+    (dateStr, index)  = outGdoc.outline.findFirstDate()
+    # findFirstDate returns the start of the section title line,
+    # I want to backup before the preceding newline
+    startPos = outGdoc.outline.headings[index].startPos - 1
+    outGdoc.insertTextWithHeader(today.strftime("Update for %a %d %b %Y"), p, startPos)
+
     cleanOldEntry(outGdoc)
     # outGdoc.appendToDoc(today.strftime("Update for %a %d %b %Y"))
     # outGdoc.appendToDoc(p)
