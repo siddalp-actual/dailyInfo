@@ -31,7 +31,10 @@ access = gf.gdriveAccess()
 # keepAccess.load(access.credentials)
 # outGdoc = gf.gdriveFile.gdfFromId(gkeepSecrets.mySecrets.TESTDOCID, access, docType='document')
 outGdoc = gf.gdriveFile.gdfFromId(
-    gkeepSecrets.mySecrets.TODAYDOCID, access, docType="document"
+    gkeepSecrets.mySecrets.TODAYDOCID
+    # gkeepSecrets.mySecrets.TESTDOCID
+    , access
+    , docType="document"
 )
 gh.GdocHelper.assertIsDoc(outGdoc)  # upgrade to a gdocHelper object
                                     # also has the side-effect of parsing the
@@ -206,11 +209,12 @@ def runMileage(dates):
     weekNd = dates[1].strftime("%Y-%m-%d")
     print("week {}-{}".format(weekSt, weekNd))
 
-    thisWeek = gdfs[(gdfs.index >= weekSt) & (gdfs.index <= weekNd)].copy()
-
     shoes = shoe_sheet.ShoeManager(gdf["Shoes"], handle=gdoc)
     shoe_runner = shoe_sheet.ShoeTracker(shoes, year=int(yearStr))
     gdfs["shoe"] = gdfs.apply(shoe_runner.assign_names, axis="columns")
+
+    thisWeek = gdfs[(gdfs.index >= weekSt) & (gdfs.index <= weekNd)].copy()
+
     # .map(
     #     shoe_runner.shoe_name_mapping
     # )  # astype("category")
@@ -232,16 +236,18 @@ def runMileage(dates):
     adder = shoe_sheet.ShoeMileYears(shoes, 6)
     adder.load()
 
-    s = gdfs.groupby(["shoe"])[cn].sum()
+    yearlyShoeSum = gdfs.groupby(["shoe"])[cn].sum()
+    weeklyShoeSum = thisWeek.groupby(["shoe"])[cn].sum()
 
     miles = {}
     # print(gdfs.iloc[:, 4])
     print(gdfs.loc[:, cn])
     miles[cn] = gdfs[cn].sum()
 
-    for k in s.keys():
+    for k in weeklyShoeSum.keys():
         # miles[residual[k]["name"]] = s[k] + residual[k]["prevYear"]
-        miles[k] = s[k] + adder.residual(int(yearStr), shoename=k)
+        if weeklyShoeSum[k] > 0:
+            miles[k] = yearlyShoeSum[k] + adder.residual(int(yearStr), shoename=k)
 
     # XC shoes ran 192 miles in 2019, and were stolen in June 2020 after 332 miles
     # miles['XC '+cn] = xcShoesYellow[cn].sum() + 193 - 332  # miles by end '19
