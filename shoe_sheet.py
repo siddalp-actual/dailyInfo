@@ -40,16 +40,16 @@ class ShoeManager:
         self.shoe_keywords = self.backing_sheet["Name"].apply(self.findwords)
 
     def idx_to_name(self, idx):
-        '''
+        """
         convert an index into a shoe name
-        '''
-        return self.backing_sheet.loc[idx]['Name']
+        """
+        return self.backing_sheet.loc[idx]["Name"]
 
     def name_to_idx(self, name):
-        '''
+        """
         find the named shoe and return its index
-        '''
-        return self.backing_sheet.set_index('Name').index.get_loc(name)
+        """
+        return self.backing_sheet.set_index("Name").index.get_loc(name)
 
     def show_sheet(self):
         """
@@ -70,8 +70,7 @@ class ShoeManager:
         """
         if self.handle is None:
             print(
-                f"no gdoc handle in object,"
-                "\n pass handle= on ShoeManager creation"
+                f"no gdoc handle in object," "\n pass handle= on ShoeManager creation"
             )
             raise ValueError
 
@@ -108,9 +107,7 @@ class ShoeMileYears:
         """
         self.cn = colname
         self.shoe_manager = shoe_manager
-        self.year_hashes = [
-            None for i in range(len(self.shoe_manager.backing_sheet))
-        ]
+        self.year_hashes = [None for i in range(len(self.shoe_manager.backing_sheet))]
 
     def load(self):
         """
@@ -124,9 +121,7 @@ class ShoeMileYears:
         push the year_hashes back into the DataFrame
         """
         for i, year_hash in enumerate(self.year_hashes):
-            self.shoe_manager.backing_sheet.loc[i, self.cn] = yaml.dump(
-                year_hash
-            )
+            self.shoe_manager.backing_sheet.loc[i, self.cn] = yaml.dump(year_hash)
 
         self.shoe_manager.write_column(self.cn)
 
@@ -220,14 +215,10 @@ class ShoeTracker:
             except AssertionError as err:
                 print(f"try using .set_current_year(<year=int>) first")
                 raise err
-            end_of_last_year = pd.to_datetime(
-                str(self.current_year - 1) + "-12-31"
-            )
+            end_of_last_year = pd.to_datetime(str(self.current_year - 1) + "-12-31")
             # find for each category, the row of the newest shoe at the end of last year
             rows = (
-                self.backing_sheet[
-                    self.backing_sheet[STARTDATE] <= end_of_last_year
-                ]
+                self.backing_sheet[self.backing_sheet[STARTDATE] <= end_of_last_year]
                 .groupby(TYPE)[STARTDATE]
                 .idxmax()
             )
@@ -260,9 +251,7 @@ class ShoeTracker:
                 raise err
             end_of_this_year = pd.to_datetime(str(self.current_year) + "-12-31")
             rows = (
-                self.backing_sheet[
-                    self.backing_sheet["Start Date"] <= end_of_this_year
-                ]
+                self.backing_sheet[self.backing_sheet["Start Date"] <= end_of_this_year]
                 .groupby("Type")["Start Date"]
                 .idxmax()
             )
@@ -272,8 +261,7 @@ class ShoeTracker:
                 .to_dict(orient="records")
             )
             self.new_shoe_info = {
-                i["Type"]: {j: i[j] for j in i.keys() if j != "Type"}
-                for i in info
+                i["Type"]: {j: i[j] for j in i.keys() if j != "Type"} for i in info
             }
             logger.info(f"{self.new_shoe_info=}")
             self.shoe_name_mapping |= ShoeDict(
@@ -302,9 +290,9 @@ class ShoeTracker:
         # if a Poole run, then use the old fixed shoe if it's after they went there
         route_words = self.shoes.findwords(row["Route"])
         if bool(route_words):  # not empty
-            if row.name > pd.to_datetime(
-                "2021-08-02"
-            ) and route_words.intersection({"upton", "holes", "hamworthy"}):
+            if row.name > pd.to_datetime("2021-08-02") and route_words.intersection(
+                {"upton", "holes", "hamworthy", "baiter", "sandbanks"}
+            ):
                 logger.debug(f"<== assign from route {route_words=}")
                 return self.shoes.backing_sheet.iloc[3]["Name"]
 
