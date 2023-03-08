@@ -209,7 +209,14 @@ def runMileage(dates):
     weekNd = dates[1].strftime("%Y-%m-%d")
     print("week {}-{}".format(weekSt, weekNd))
 
+    # initialize a ShoeManager object, using data from `gdoc`
+    # `gdoc` is locally loaded in the DataFrame gdf 
+    # and its "Shoes" sheet is the database 
     shoes = shoe_sheet.ShoeManager(gdf["Shoes"], handle=gdoc)
+
+    # create a ShoeTracker object for the current year
+    # the base shoes are set up to be those in use at year start
+    # the new shoes are any new in that year
     shoe_runner = shoe_sheet.ShoeTracker(shoes, year=int(yearStr))
     gdfs["shoe"] = gdfs.apply(shoe_runner.assign_names, axis="columns")
 
@@ -219,21 +226,10 @@ def runMileage(dates):
     #     shoe_runner.shoe_name_mapping
     # )  # astype("category")
 
-    #
-    # # Assign shoe names for grouping
-    # gdfs["shoe"] = gdfs.apply(shoeName, axis="columns").astype("category")
-    residual = {
-        "ASICS-GT1000-9": {"name": "ASICS-GT1000-9", "prevYear": 324.6},
-        "Merrell XC": {"name": "Merrell XC", "prevYear": 505},
-        "ASICS-GT1000-8": {"name": "ASICS-GT1000-8", "prevYear": 312},
-        "Koa XC": {"name": "Koa XC", "prevYear": 381},
-        "Inov8 X-Talon": {"name": "Inov8 X-Talon", "prevYear": 0},
-    }
-    # The order of keys of residual matches alphabetic collating sequence of
-    # NewRoad, NewXc, OldRoad, OldXc
-    # gdfs['shoe'].cat.categories = residual.keys()
-
+    # create a ShoeMileYears object from the SheetManager, the
+    # end of year totals for previous years are hashes stored in col 6
     adder = shoe_sheet.ShoeMileYears(shoes, 6)
+    # read in those hashes
     adder.load()
 
     yearlyShoeSum = gdfs.groupby(["shoe"])[cn].sum()
@@ -246,6 +242,7 @@ def runMileage(dates):
 
     for k in weeklyShoeSum.keys():
         if weeklyShoeSum[k] > 0:
+            # as a side effect, adder updates YTD and year_hashes
             miles[k] = adder.total(k, int(yearStr), yearlyShoeSum[k])
 
     # Now write back the updates into the shoes sheet in gdrive
