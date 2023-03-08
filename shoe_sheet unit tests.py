@@ -86,7 +86,7 @@ class TestStuff(unittest.TestCase):
         print(selected_data.iloc[[24]])  # note double [] returns dataframe not series
         assigned_shoe = selected_data.iloc[[24]].apply(runner.assign_names, axis='columns')
         print(list(assigned_shoe))
-        self.assertNotEqual(assigned_shoe[0], 'ASICS-GT1000-8')  # fix me when committed
+        self.assertEqual(assigned_shoe[0], 'ASICS-GT1000-8')
         
     def test_02(self):
         shoes = shoe_sheet.ShoeManager(self.sheets[TEST_SHEET], handle=self.gdoc)
