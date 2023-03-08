@@ -245,14 +245,12 @@ def runMileage(dates):
     miles[cn] = gdfs[cn].sum()
 
     for k in weeklyShoeSum.keys():
-        # miles[residual[k]["name"]] = s[k] + residual[k]["prevYear"]
         if weeklyShoeSum[k] > 0:
-            miles[k] = yearlyShoeSum[k] + adder.residual(int(yearStr), shoename=k)
+            miles[k] = adder.total(k, int(yearStr), yearlyShoeSum[k])
 
-    # XC shoes ran 192 miles in 2019, and were stolen in June 2020 after 332 miles
-    # miles['XC '+cn] = xcShoesYellow[cn].sum() + 193 - 332  # miles by end '19
-    # miles['Blue ASICS '+cn] = blueAsics[cn].sum() - xcShoesBlue[cn].sum() + 140 #  140 miles in '18
-    # miles['Yellow ASICS '+cn] = yellowAsics[cn].sum() - xcShoesYellow[cn].sum() + 332  # 332 miles in '19
+    # Now write back the updates into the shoes sheet in gdrive
+    adder.push_updates()
+
     miles["week" + cn] = thisWeek[cn].sum()
     miles["10k's"] = "{:} {:d}/{:d}".format(tenks, int(mostRecent10kRank), int(tenks))
     print(miles)

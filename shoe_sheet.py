@@ -83,6 +83,7 @@ class ShoeManager:
             list(self.backing_sheet[colname].apply(str)),
             arrayRepresents="COLUMN",
             sheet="Shoes",
+            #sheet="Copy of Shoes",
         )
 
     @staticmethod
@@ -147,6 +148,30 @@ class ShoeMileYears:
                 shoe_sum += self.year_hashes[row_num][k]
         return shoe_sum
 
+    def total(self, shoename: str, year: int, yearsTotal: float) -> float:
+        """
+        write the year's Total into the hash for the given year.
+        add it to the residual giving the YTD total
+         - pop that in the right column
+         - and return the total
+        """
+        assert year > 2020
+        row_num = self.shoe_manager.name_to_idx(shoename)
+        assert row_num < len(self.year_hashes)
+        self.year_hashes[row_num][year] = float(yearsTotal)
+        total = yearsTotal + self.residual(year, shoename=shoename)
+        # avoid chained indexing of iloc[row_num]['YTD']
+        ytdIndex = self.shoe_manager.backing_sheet.columns.get_loc('YTD')
+        self.shoe_manager.backing_sheet.iloc[row_num, ytdIndex] = total
+        return total
+
+    def push_updates(self):
+        """
+        write the updated hashes back into the sheet,
+        and tell the shoe manager to write back the 'YTD' column too
+        """
+        self.save()
+        self.shoe_manager.update_totals()
 
 class ShoeDict(dict):
     """
