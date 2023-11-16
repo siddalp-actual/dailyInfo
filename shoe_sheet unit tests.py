@@ -89,6 +89,9 @@ class TestStuff(unittest.TestCase):
         self.assertEqual(assigned_shoe[0], 'ASICS-GT1000-8')
         
     def test_02(self):
+        '''
+        Test loading and writing back the shoe totals
+        '''
         shoes = shoe_sheet.ShoeManager(self.sheets[TEST_SHEET], handle=self.gdoc)
         adder = shoe_sheet.ShoeMileYears(shoes, 6)
         adder.load()
@@ -98,7 +101,24 @@ class TestStuff(unittest.TestCase):
         self.assertEqual(adder.year_hashes[8][2023], 200)
         display(adder.shoe_manager.backing_sheet)
         adder.push_updates()
+
+    def test_03_(self):
+        '''
+        Test that there can be 2 new shoes in a year
+        '''
+        shoes = shoe_sheet.ShoeManager(self.sheets[TEST_SHEET], handle=self.gdoc)
+        runner = shoe_sheet.ShoeTracker(shoes, year=2023)
+        print(runner.base_shoes())
+        #logger.info(runner.new_shoe_info)
+        selected_data = self.sheets['2023']
+        selected_data.index = pd.to_datetime(selected_data.iloc[:, 0], dayfirst=True)
+        for row in ([193, 191]):
+            print(selected_data.iloc[[row]])  # note double [] returns dataframe not series
+            assigned_shoe = selected_data.iloc[[row]].apply(runner.assign_names, axis='columns')
+            print(list(assigned_shoe))
+            # self.assertEqual(assigned_shoe[0], 'ASICS-GT1000-8')
         
+
 def doTests():
     suite = unittest.TestLoader().loadTestsFromTestCase(TestStuff)
     unittest.TextTestRunner(verbosity=2).run(suite)
