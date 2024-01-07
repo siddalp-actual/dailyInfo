@@ -102,7 +102,6 @@ class TestStuff(unittest.TestCase):
         display(adder.shoe_manager.backing_sheet)
         adder.push_updates()
 
-<<<<<<< Updated upstream
     def test_03_(self):
         '''
         Test that there can be 2 new shoes in a year
@@ -118,7 +117,7 @@ class TestStuff(unittest.TestCase):
             assigned_shoe = selected_data.iloc[[row]].apply(runner.assign_names, axis='columns')
             print(list(assigned_shoe))
             # self.assertEqual(assigned_shoe[0], 'ASICS-GT1000-8')
-=======
+
     def test_04_(self):
         '''
         want to debug why xc run on 4/1/24 doesn't pick up new trail shoe
@@ -134,9 +133,6 @@ class TestStuff(unittest.TestCase):
         print(list(assigned_shoe))
         self.assertEqual(assigned_shoe[0], '2024Inov8 Mudclaw')
         
->>>>>>> Stashed changes
-        
-
 def doTests():
     suite = unittest.TestLoader().loadTestsFromTestCase(TestStuff)
     unittest.TextTestRunner(verbosity=2).run(suite)

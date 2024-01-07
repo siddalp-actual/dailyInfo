@@ -4,7 +4,9 @@ import requests
 import re
 from bs4 import BeautifulSoup
 import gkeepapi
+import argparse
 import datetime
+import logging
 import numpy as np
 import pandas as pd
 import sys
@@ -13,6 +15,17 @@ import traceback
 import gkeepSecrets
 
 printOnly = False
+
+arg_parser = argparse.ArgumentParser(description="Update useful info in daily gDoc")
+# arg_parser.add_argument("filename", help="Filename to parse")
+arg_parser.add_argument("-d", "--debug", action="store_true", help="turn on debugging")
+
+args = arg_parser.parse_args()
+
+logger = logging.getLogger(__name__)
+LOGGER_LEVEL = logging.ERROR
+if args.debug:
+    LOGGER_LEVEL = logging.DEBUG
 
 keepAccess = gkeepapi.Keep()
 try:
@@ -30,12 +43,18 @@ import gdocHelper as gh
 access = gf.gdriveAccess()
 # keepAccess.load(access.credentials)
 # outGdoc = gf.gdriveFile.gdfFromId(gkeepSecrets.mySecrets.TESTDOCID, access, docType='document')
-outGdoc = gf.gdriveFile.gdfFromId(
-    gkeepSecrets.mySecrets.TODAYDOCID
-    # gkeepSecrets.mySecrets.TESTDOCID
-    , access
-    , docType="document"
-)
+if args.debug:
+    outGdoc = gf.gdriveFile.gdfFromId(
+        gkeepSecrets.mySecrets.TESTDOCID
+        , access
+        , docType="document"
+    )
+else:
+    outGdoc = gf.gdriveFile.gdfFromId(
+        gkeepSecrets.mySecrets.TODAYDOCID
+        , access
+        , docType="document"
+    )
 gh.GdocHelper.assertIsDoc(outGdoc)  # upgrade to a gdocHelper object
                                     # also has the side-effect of parsing the
                                     # document to create an 'outline' index
