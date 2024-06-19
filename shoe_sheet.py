@@ -270,7 +270,7 @@ class ShoeTracker:
             logger.info(f"{self.shoe_name_mapping=}")
         return self.new_shoe_info
 
-    def assign_names(self, row):
+    def old_assign_names(self, row):
         """
         Two dicts, base, and newest are passed in: these contain
         the start dates for the base shoe and newest shoe in each
@@ -315,3 +315,43 @@ class ShoeTracker:
 
         logger.debug(f"<== assign from base {sup=}")
         return self.base_shoe_info[sup]["Name"]
+
+    def assign_names(self, row):
+        '''
+        this new assign_names method no longer has the 'old' and 'new' concept
+        it relies purely on:
+        a) choosing from the Road or XC subset
+        b) finding the newest shoe at the date of the run
+        '''
+        logger.debug(f"{self=} {row=}")
+        # find words in the 'Remarks' column and see whether one identifies a shoe
+        remark_words = self.shoes.findwords(row["Remarks"])
+        if bool(remark_words):  # not empty set
+            logger.debug(f"{remark_words=}")
+            for idx, val in self.shoes.shoe_keywords.iteritems():
+                if bool(val.intersection(remark_words)):
+                    logger.debug(f"<== assign from remarks {idx=}")
+                    return self.shoes.backing_sheet.iloc[idx]["Name"]
+
+        # if a Poole run, then use the old fixed shoe if it's after they went there
+        route_words = self.shoes.findwords(row["Route"])
+        if bool(route_words):  # not empty
+            if row.name > pd.to_datetime("2021-08-02") and route_words.intersection(
+                {"upton", "holes", "hamworthy", "baiter", "sandbanks"}
+            ):
+                logger.debug(f"<== assign from route {route_words=}")
+                return self.shoes.backing_sheet.iloc[3]["Name"]
+
+        matchobj = re.search(r"xc", row["Remarks"], flags=re.I)  # ignore case
+        if matchobj:
+            sup = "XC"
+        else:
+            sup = "Road"
+
+        lookup_shoes = self.backing_sheet.groupby('Type').get_group(sup)  # the XC|Road subset for this run
+        lookup_shoes.index = lookup_shoes['Start Date']  # changer the index so we can use get_indexer
+        # get_indexer looks for a collection of dates and returns a collection of rows
+        # currently, because we're in an apply method, only one date is passed, so is made
+        # the only element in the collection [row.name], and so one row is returned and we need
+        # the [0] subscript to dereference it
+        return lookup_shoes.iloc[lookup_shoes.index.get_indexer([row.name], method='ffill')[0]]['Name']  # last row
