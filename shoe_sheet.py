@@ -328,7 +328,7 @@ class ShoeTracker:
         remark_words = self.shoes.findwords(row["Remarks"])
         if bool(remark_words):  # not empty set
             logger.debug(f"{remark_words=}")
-            for idx, val in self.shoes.shoe_keywords.iteritems():
+            for idx, val in self.shoes.shoe_keywords.items():
                 if bool(val.intersection(remark_words)):
                     logger.debug(f"<== assign from remarks {idx=}")
                     return self.shoes.backing_sheet.iloc[idx]["Name"]
