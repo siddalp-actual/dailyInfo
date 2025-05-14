@@ -201,6 +201,15 @@ def runMileage(dates):
         mostRecent10kRank = gdfs[gdfs["tenk"] == True]["tenkrank"].tail(1)
     print(gdfs.columns)
 
+    # Track half marathons (21.1 km)
+    gdfs["halfmarathon"] = gdfs["km"] >= 21.1  # Half marathon in kilometers
+    halfmarathons = len(gdfs[gdfs["halfmarathon"] == True])
+    if halfmarathons == 0:
+        mostRecentHalfMarathonRank = 0
+    else:
+        gdfs["halfmarathonrank"] = gdfs[gdfs["halfmarathon"] == True]["Pace"].rank(method="max")
+        mostRecentHalfMarathonRank = gdfs[gdfs["halfmarathon"] == True]["halfmarathonrank"].tail(1)
+
     # Now the document is cached, look at the bottom left and decide
     # whether to add some skeleton entries
     lr = gdoc.lastRow[yearStr]
@@ -229,8 +238,8 @@ def runMileage(dates):
     print("week {}-{}".format(weekSt, weekNd))
 
     # initialize a ShoeManager object, using data from `gdoc`
-    # `gdoc` is locally loaded in the DataFrame gdf 
-    # and its "Shoes" sheet is the database 
+    # `gdoc` is locally loaded in the DataFrame gdf
+    # and its "Shoes" sheet is the database
     shoes = shoe_sheet.ShoeManager(gdf["Shoes"], handle=gdoc)
 
     # create a ShoeTracker object for the current year
@@ -269,6 +278,7 @@ def runMileage(dates):
 
     miles["week" + cn] = thisWeek[cn].sum()
     miles["10k's"] = "{:} {:d}/{:d}".format(tenks, int(mostRecent10kRank), int(tenks))
+    miles["Half Marathons"] = "{:} {:d}/{:d}".format(halfmarathons, int(mostRecentHalfMarathonRank), int(halfmarathons))
     print(miles)
     return miles
 
@@ -556,7 +566,7 @@ def cleanOldEntry(doc):
                 endPos = doc.outline.headings[index + 1].startPos
             # 'Invalid requests[0].deleteContentRange: The range cannot include
             # the newline character at the end of the segment.
-            # So, we go to endPos - 1 
+            # So, we go to endPos - 1
             # print(f"cleanOld: delete [{startPos}, {endPos - 1}]")
             doc.deleteText(startPos, endPos - 1)
             index -= 1  # backup an index, because we just deleted it
