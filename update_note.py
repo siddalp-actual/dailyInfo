@@ -64,7 +64,7 @@ class ExchangeRate(object):
     url = "https://finance.yahoo.com/quote/"
     url = "https://www.bankofengland.co.uk/boeapps/database/Rates.asp?into=GBP"
     fakeUserAgent = "Whatever!"
-    dateMatch = re.compile("\d{1,2} \w{3} \d{4}")
+    dateMatch = re.compile(r"\d{1,2} \w{3} \d{4}")
 
     def __init__(self):
         self.rates = {}
@@ -186,10 +186,10 @@ def runMileage(dates):
 
     # anything in the miles column, that doesn't look like a decimal,
     # get's turned into NaN, and then 0
-    gdfs[cn].replace(r"(?![\.0-9]+)", np.nan, regex=True, inplace=True)
-    gdfs[cn].fillna(0, inplace=True)  # blanks / nulls etc set to 0
+    gdfs.replace({cn: r"(?![\.0-9]+)"}, {cn: np.nan}, regex=True, inplace=True)
+    gdfs.fillna({cn: 0}, inplace=True)  # blanks / nulls etc set to 0
     # and the 'km' column to cope with skeleton formula
-    gdfs["km"].replace(r"(?![\.0-9]+)", 0, regex=True, inplace=True)
+    gdfs.replace({'km': r"(?![\.0-9]+)"}, {'km': 0}, regex=True, inplace=True)
 
     gdfs["tenk"] = gdfs["km"] >= 10
     tenks = len(gdfs[gdfs["tenk"] == True])
@@ -198,7 +198,7 @@ def runMileage(dates):
     else:
         gdfs["tenkrank"] = gdfs[gdfs["tenk"] == True]["Pace"].rank(method="max")
         # display(gdfs[gdfs['tenk'] == True])
-        mostRecent10kRank = gdfs[gdfs["tenk"] == True]["tenkrank"].tail(1)
+        mostRecent10kRank = gdfs[gdfs["tenk"] == True]["tenkrank"].tail(1).iloc[0]
     print(gdfs.columns)
 
     # Track half marathons (21.1 km)
@@ -208,7 +208,7 @@ def runMileage(dates):
         mostRecentHalfMarathonRank = 0
     else:
         gdfs["halfmarathonrank"] = gdfs[gdfs["halfmarathon"] == True]["Pace"].rank(method="max")
-        mostRecentHalfMarathonRank = gdfs[gdfs["halfmarathon"] == True]["halfmarathonrank"].tail(1)
+        mostRecentHalfMarathonRank = gdfs[gdfs["halfmarathon"] == True]["halfmarathonrank"].tail(1).iloc[0]
 
     # Now the document is cached, look at the bottom left and decide
     # whether to add some skeleton entries
@@ -377,7 +377,7 @@ def bikeMileage(dates):
     for cn in thisYear.columns:
         if cn.startswith("Miles"):
             # replace non numeric with 0
-            thisYear[cn].replace(r"(?![\.0-9]+)", 0, regex=True, inplace=True)
+            thisYear.replace({cn: r"(?![\.0-9]+)"}, {cn: 0}, regex=True, inplace=True)
             miles[cn] = thisYear[cn].sum()
             miles["week" + cn] = thisWeek[cn].sum()
     return miles
